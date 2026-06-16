@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Cup Quiz</title>
+  <style>
+    :root {
+      --grass-dark: #052f1f;
+      --grass: #0d5a35;
+      --grass-light: #1f7a4e;
+      --gold: #f5c453;
+      --cream: #fff9e8;
+      --white: #f8fcff;
+      --ink: #09261a;
+      --sky: #9fe8ff;
+      --line: rgba(255, 255, 255, 0.2);
+      --panel: rgba(5, 36, 24, 0.88);
+      --panel-2: rgba(12, 80, 49, 0.9);
+      --success: #3fd07c;
+      --danger: #db5f5f;
+      --muted: #c7ddcf;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--white);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(159, 232, 255, 0.22), transparent 24rem),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)),
+        linear-gradient(rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.28)),
+        url("stadium.png") center top / cover no-repeat,
+        repeating-linear-gradient(
+          90deg,
+          var(--grass-dark) 0 11vw,
+          var(--grass) 11vw 22vw,
+          var(--grass-light) 22vw 33vw
+        );
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent 0 8%, rgba(255, 255, 255, 0.06) 8% 8.2%, transparent 8.2% 91.8%, rgba(255, 255, 255, 0.06) 91.8% 92%, transparent 92%),
+        linear-gradient(transparent 0 15%, rgba(255, 255, 255, 0.06) 15% 15.2%, transparent 15.2% 84.8%, rgba(255, 255, 255, 0.06) 84.8% 85%, transparent 85%),
+        radial-gradient(circle at 50% 50%, transparent 0 13%, rgba(255, 255, 255, 0.06) 13% 13.4%, transparent 13.4% 100%);
+      opacity: 0.8;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .start-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(159, 232, 255, 0.2), transparent 22rem),
+        linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.72)),
+        url("stadium.png") center center / cover no-repeat,
+        linear-gradient(180deg, rgba(1, 15, 8, 0.75), rgba(1, 15, 8, 0.92));
+      backdrop-filter: blur(3px);
+    }
+
+    .start-screen.hidden {
+      display: none;
+    }
+
+    .start-content {
+      width: min(620px, 100%);
+      display: grid;
+      justify-items: center;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .cup-mark {
+      position: relative;
+      width: min(280px, 74vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 3px solid rgba(245, 196, 83, 0.9);
+      background:
+        radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.22), transparent 18%),
+        conic-gradient(from 180deg, #0b4e2f, #1c774c, #0b4e2f, #1c774c, #0b4e2f);
+      box-shadow: 0 0 40px rgba(159, 232, 255, 0.24), inset 0 0 40px rgba(2, 10, 6, 0.7);
+    }
+
+    .cup-mark::before,
+    .cup-mark::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      inset: 14%;
+      border: 2px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .cup-mark::after {
+      inset: 30%;
+      border: 2px dashed rgba(245, 196, 83, 0.7);
+    }
+
+    .mark-core {
+      position: relative;
+      z-index: 1;
+      width: 42%;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--ink);
+      background: linear-gradient(135deg, var(--cream), var(--gold));
+      font-size: clamp(2rem, 11vw, 4rem);
+      font-weight: 900;
+      box-shadow: inset 0 -6px 14px rgba(120, 82, 0, 0.18);
+    }
+
+    .start-title {
+      margin: 0;
+      font-size: clamp(2rem, 7vw, 4rem);
+      line-height: 1;
+    }
+
+    .start-subtitle {
+      margin: 0;
+      max-width: 34rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .start-button,
+    .lifeline,
+    .restart {
+      min-height: 48px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease, opacity 0.15s ease;
+    }
+
+    .start-button {
+      min-width: 200px;
+      border: 2px solid rgba(245, 196, 83, 0.95);
+      color: var(--ink);
+      background: linear-gradient(135deg, var(--gold), var(--cream));
+      font-size: 1.05rem;
+      font-weight: 900;
+      box-shadow: 0 0 28px rgba(245, 196, 83, 0.24);
+    }
+
+    .start-button:hover,
+    .lifeline:hover:not(:disabled),
+    .restart:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .game {
+      width: min(1180px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .stage,
+    .ladder {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: var(--panel);
+      box-shadow: 0 20px 55px var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .stage {
+      min-height: calc(100vh - 40px);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      border-radius: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+
+    .logo {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--ink);
+      background: linear-gradient(135deg, var(--cream), var(--gold));
+      font-size: 1.15rem;
+      font-weight: 900;
+      box-shadow: 0 0 24px rgba(245, 196, 83, 0.18);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 2.1rem);
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .status {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      min-width: 118px;
+      padding: 9px 12px;
+      border: 1px solid rgba(245, 196, 83, 0.45);
+      border-radius: 999px;
+      color: var(--cream);
+      background: rgba(245, 196, 83, 0.1);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .centerpiece {
+      display: grid;
+      gap: 18px;
+      margin-top: 6px;
+    }
+
+    .lifelines {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .lifeline,
+    .restart {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--white);
+      background: linear-gradient(180deg, rgba(31, 122, 78, 0.95), rgba(8, 58, 34, 0.95));
+      padding: 10px 16px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .lifeline:disabled,
+    .answer:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .question-box {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(24px, 4vw, 42px) clamp(26px, 7vw, 70px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+        linear-gradient(135deg, rgba(8, 58, 34, 0.96), rgba(18, 103, 63, 0.92));
+      text-align: center;
+      box-shadow: inset 0 0 0 2px rgba(245, 196, 83, 0.08);
+    }
+
+    .question-box::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .prompt-label {
+      margin: 0 0 10px;
+      color: var(--sky);
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .question {
+      margin: 0;
+      min-height: 72px;
+      display: grid;
+      place-items: center;
+      font-size: clamp(1.25rem, 4vw, 2.2rem);
+      line-height: 1.22;
+      overflow-wrap: anywhere;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .answer {
+      min-height: 72px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      color: var(--white);
+      background: linear-gradient(180deg, rgba(12, 80, 49, 0.95), rgba(7, 49, 29, 0.96));
+      padding: 13px 18px;
+      cursor: pointer;
+      text-align: left;
+      font-size: clamp(0.95rem, 2.2vw, 1.08rem);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+    }
+
+    .answer:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .letter {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--ink);
+      background: linear-gradient(135deg, var(--gold), var(--cream));
+      font-weight: 900;
+    }
+
+    .answer.correct {
+      background: linear-gradient(180deg, #19844d, #0f6036);
+    }
+
+    .answer.wrong {
+      background: linear-gradient(180deg, #9c4242, #672525);
+    }
+
+    .audience {
+      min-height: 124px;
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(2, 17, 10, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: none;
+    }
+
+    .audience.visible {
+      display: block;
+    }
+
+    .audience-title {
+      margin: 0 0 12px;
+      color: var(--sky);
+      font-weight: 700;
+    }
+
+    .bars {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px minmax(0, 1fr) 44px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .bar-name {
+      color: var(--white);
+      font-size: 0.9rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .bar-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--sky), var(--gold));
+      transition: width 0.4s ease;
+    }
+
+    .message {
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .ladder {
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ladder h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--sky);
+      text-align: center;
+    }
+
+    .level {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(12, 80, 49, 0.52);
+      font-size: 0.92rem;
+    }
+
+    .level.active {
+      color: var(--ink);
+      background: linear-gradient(135deg, var(--gold), var(--cream));
+      font-weight: 800;
+    }
+
+    .level.done {
+      color: var(--success);
+    }
+
+    .level.wrong-level {
+      color: var(--white);
+      background: linear-gradient(180deg, #9c4242, #672525);
+      border: 1px solid rgba(219, 95, 95, 0.72);
+    }
+
+    .restart {
+      align-self: center;
+      min-width: 160px;
+    }
+
+    .result-card {
+      display: none;
+      gap: 12px;
+      justify-items: center;
+      padding: 22px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(2, 17, 10, 0.52);
+      text-align: center;
+    }
+
+    .result-card.visible {
+      display: grid;
+    }
+
+    .result-card img {
+      width: min(100%, 360px);
+      border-radius: 16px;
+      border: 2px solid rgba(245, 196, 83, 0.5);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    .result-fallback {
+      width: min(100%, 230px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: none;
+      place-items: center;
+      border: 3px solid rgba(245, 196, 83, 0.9);
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.22), transparent 22%),
+        conic-gradient(from 180deg, #0b4e2f, #1c774c, #0b4e2f, #1c774c, #0b4e2f);
+      box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.3);
+    }
+
+    .result-fallback.visible {
+      display: grid;
+    }
+
+    .result-fallback span {
+      width: 46%;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cream), var(--gold));
+      color: var(--ink);
+      font-size: clamp(1.4rem, 6vw, 2rem);
+      font-weight: 900;
+    }
+
+    .result-card p {
+      margin: 0;
+      color: var(--sky);
+      font-weight: 700;
+    }
+
+    .centerpiece.result-mode .question-box,
+    .centerpiece.result-mode .answers,
+    .centerpiece.result-mode .audience,
+    .centerpiece.result-mode .message {
+      display: none;
+    }
+
+    .page-footer {
+      padding: 0 20px 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .game {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .stage {
+        min-height: auto;
+      }
+
+      .prize-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .stage {
+        padding: 14px;
+      }
+
+      .topbar,
+      .brand,
+      .status {
+        justify-content: center;
+        text-align: center;
+      }
+
+      .answers {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-row {
+        grid-template-columns: 94px minmax(0, 1fr) 40px;
+      }
+
+      .prize-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="start-screen" id="startScreen" aria-label="Start game">
+    <div class="start-content">
+      <div class="cup-mark" aria-hidden="true">
+        <div class="mark-core">WC</div>
+      </div>
+      <h1 class="start-title">World Cup Quiz</h1>
+      <p class="start-subtitle">Play the same quiz in a stadium-style World Cup experience and classify each behavior correctly.</p>
+      <button class="start-button" id="startBtn" type="button">KICK OFF</button>
+    </div>
+  </section>
+
+  <main class="game" aria-label="World Cup quiz game">
+    <section class="stage">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">WC</div>
+          <div>
+            <h1>World Cup Values Quiz</h1>
+            <p class="subtitle">Same questions, new tournament atmosphere.</p>
+          </div>
+        </div>
+        <div class="status">
+          <div class="pill" id="questionCounter">Match 1/15</div>
+          <div class="pill" id="scoreCounter">0 goals</div>
+        </div>
+      </div>
+
+      <div class="centerpiece">
+        <div class="lifelines" aria-label="Lifelines">
+          <button class="lifeline" id="fiftyBtn" type="button">VAR Check</button>
+          <button class="lifeline" id="audienceBtn" type="button">Ask The Fans</button>
+        </div>
+
+        <section class="question-box" aria-live="polite">
+          <p class="prompt-label">Team behavior</p>
+          <p class="question" id="questionText"></p>
+        </section>
+
+        <div class="answers" id="answers"></div>
+
+        <section class="audience" id="audiencePanel" aria-live="polite">
+          <p class="audience-title">The fans think:</p>
+          <div class="bars" id="audienceBars"></div>
+        </section>
+
+        <div class="message" id="message">Choose an answer to continue.</div>
+        <section class="result-card" id="resultCard" aria-live="polite">
+          <img id="resultImage" alt="Quiz result illustration" />
+          <div class="result-fallback" id="resultFallback" aria-hidden="true"><span id="resultBadgeText">FT</span></div>
+          <p id="resultCaption"></p>
+        </section>
+        <button class="restart" id="restartBtn" type="button">Play Again</button>
+      </div>
+    </section>
+
+    <aside class="ladder" aria-label="Tournament ladder">
+      <h2>Road To The Cup</h2>
+      <div class="prize-list" id="prizeList"></div>
+    </aside>
+  </main>
+
+  <footer class="page-footer">Created by: Jaison and Nadza</footer>
+
+  <script>
+    const categories = ["Have Courage", "Create Impact", "Actively Collaborate"];
+
+    const questionBank = [
+      { text: "Take risks & be entrepreneurial", answer: "Have Courage" },
+      { text: "Take decisions & have drive", answer: "Have Courage" },
+      { text: "Speak-up & challenge", answer: "Have Courage" },
+      { text: "Learn from failures", answer: "Have Courage" },
+      { text: "Be open & curious", answer: "Have Courage" },
+      { text: "Take ownership", answer: "Create Impact" },
+      { text: "Set direction & pursue a common goal", answer: "Create Impact" },
+      { text: "Drive execution & deliver results", answer: "Create Impact" },
+      { text: "Empower & enable", answer: "Create Impact" },
+      { text: "Be persistent & resilient", answer: "Create Impact" },
+      { text: "Take care of health & safety", answer: "Actively Collaborate" },
+      { text: "Act as #teamRWE", answer: "Actively Collaborate" },
+      { text: "Foster diversity & inclusion", answer: "Actively Collaborate" },
+      { text: "Respect others", answer: "Actively Collaborate" },
+      { text: "Seek & provide feedback", answer: "Actively Collaborate" }
+    ];
+
+    const stages = [
+      "Opening Match",
+      "First Half",
+      "Pressing High",
+      "Set Piece",
+      "Added Time",
+      "Group Stage",
+      "Top Of Group",
+      "Round of 16",
+      "Quarter-Final",
+      "Semi-Final",
+      "Final Whistle",
+      "Golden Moment",
+      "Podium Finish",
+      "Cup Final",
+      "World Champion"
+    ];
+
+    const state = {
+      questions: [],
+      currentIndex: 0,
+      score: 0,
+      locked: false,
+      usedFifty: false,
+      usedAudience: false,
+      hiddenOptions: new Set(),
+      levelResults: []
+    };
+
+    const questionText = document.getElementById("questionText");
+    const answersElement = document.getElementById("answers");
+    const messageElement = document.getElementById("message");
+    const questionCounter = document.getElementById("questionCounter");
+    const scoreCounter = document.getElementById("scoreCounter");
+    const fiftyBtn = document.getElementById("fiftyBtn");
+    const audienceBtn = document.getElementById("audienceBtn");
+    const audiencePanel = document.getElementById("audiencePanel");
+    const audienceBars = document.getElementById("audienceBars");
+    const prizeList = document.getElementById("prizeList");
+    const restartBtn = document.getElementById("restartBtn");
+    const startScreen = document.getElementById("startScreen");
+    const startBtn = document.getElementById("startBtn");
+    const centerpiece = document.querySelector(".centerpiece");
+    const resultCard = document.getElementById("resultCard");
+    const resultImage = document.getElementById("resultImage");
+    const resultFallback = document.getElementById("resultFallback");
+    const resultCaption = document.getElementById("resultCaption");
+    const resultBadgeText = document.getElementById("resultBadgeText");
+
+    function shuffle(items) {
+      const copy = [...items];
+      for (let index = copy.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+      }
+      return copy;
+    }
+
+    function createNaturalQuestionOrder(items) {
+      let bestOrder = shuffle(items);
+      let bestScore = scoreQuestionOrder(bestOrder);
+
+      for (let attempt = 0; attempt < 600; attempt++) {
+        const candidate = shuffle(items);
+        const candidateScore = scoreQuestionOrder(candidate);
+
+        if (candidateScore < bestScore) {
+          bestOrder = candidate;
+          bestScore = candidateScore;
+        }
+
+        if (bestScore === 0) break;
+      }
+
+      return bestOrder;
+    }
+
+    function scoreQuestionOrder(items) {
+      let score = 0;
+
+      for (let index = 1; index < items.length; index++) {
+        if (items[index].answer === items[index - 1].answer) score += 2;
+
+        if (
+          index >= 2 &&
+          items[index].answer === items[index - 1].answer &&
+          items[index].answer === items[index - 2].answer
+        ) {
+          score += 80;
+        }
+
+        if (
+          index >= 5 &&
+          items[index].answer === items[index - 3].answer &&
+          items[index - 1].answer === items[index - 4].answer &&
+          items[index - 2].answer === items[index - 5].answer
+        ) {
+          score += 12;
+        }
+      }
+
+      return score;
+    }
+
+    function startGame() {
+      startScreen.classList.add("hidden");
+      state.questions = createNaturalQuestionOrder(questionBank);
+      state.currentIndex = 0;
+      state.score = 0;
+      state.locked = false;
+      state.usedFifty = false;
+      state.usedAudience = false;
+      state.hiddenOptions = new Set();
+      state.levelResults = Array(questionBank.length).fill(null);
+      fiftyBtn.disabled = false;
+      audienceBtn.disabled = false;
+      messageElement.textContent = "Choose an answer to continue.";
+      centerpiece.classList.remove("result-mode");
+      resultCard.classList.remove("visible");
+      resultImage.removeAttribute("src");
+      resultImage.style.display = "none";
+      resultFallback.classList.remove("visible");
+      resultCaption.textContent = "";
+      resultBadgeText.textContent = "FT";
+      renderPrizeList();
+      renderQuestion();
+    }
+
+    function currentQuestion() {
+      return state.questions[state.currentIndex];
+    }
+
+    function renderQuestion() {
+      const question = currentQuestion();
+      state.locked = false;
+      state.hiddenOptions = new Set();
+      audiencePanel.classList.remove("visible");
+      audienceBars.innerHTML = "";
+
+      questionText.textContent = question.text;
+      questionCounter.textContent = `Match ${state.currentIndex + 1}/${state.questions.length}`;
+      scoreCounter.textContent = `${state.score} goals`;
+      messageElement.textContent = "Which value does this behavior belong to?";
+      renderAnswers();
+      renderPrizeList();
+    }
+
+    function renderAnswers() {
+      answersElement.innerHTML = "";
+      categories.forEach((category, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "answer";
+        button.dataset.answer = category;
+        button.disabled = state.hiddenOptions.has(category) || state.locked;
+
+        const letter = document.createElement("span");
+        letter.className = "letter";
+        letter.textContent = String.fromCharCode(65 + index);
+
+        const text = document.createElement("span");
+        text.textContent = category;
+
+        button.append(letter, text);
+        button.addEventListener("click", () => selectAnswer(category, button));
+        answersElement.appendChild(button);
+      });
+    }
+
+    function selectAnswer(selectedAnswer, selectedButton) {
+      if (state.locked) return;
+
+      state.locked = true;
+      const correctAnswer = currentQuestion().answer;
+      const isCorrect = selectedAnswer === correctAnswer;
+      const answerButtons = [...answersElement.querySelectorAll(".answer")];
+
+      answerButtons.forEach((button) => {
+        button.disabled = true;
+        if (button.dataset.answer === correctAnswer) {
+          button.classList.add("correct");
+        }
+      });
+
+      if (!isCorrect) {
+        state.levelResults[state.currentIndex] = "wrong";
+        selectedButton.classList.add("wrong");
+        renderPrizeList();
+        messageElement.textContent = `Off target. The correct answer is ${correctAnswer}. Next match coming up.`;
+        advanceOrFinish(1800);
+        return;
+      }
+
+      state.levelResults[state.currentIndex] = "correct";
+      state.score += 1;
+      scoreCounter.textContent = `${state.score} goals`;
+      renderPrizeList();
+
+      messageElement.textContent = "Goal! Next match coming up.";
+      advanceOrFinish(1100);
+    }
+
+    function advanceOrFinish(delay) {
+      if (state.currentIndex === state.questions.length - 1) {
+        finishGame();
+        return;
+      }
+
+      state.currentIndex += 1;
+      setTimeout(renderQuestion, delay);
+    }
+
+    function finishGame() {
+      const stage = state.score === 0 ? "Kickoff" : stages[state.score - 1];
+      const imageName = getResultImageName(state.score);
+      messageElement.textContent = `Full time. Stage reached: ${stage}. Correct answers: ${state.score}/${state.questions.length}.`;
+      audiencePanel.classList.remove("visible");
+      audienceBars.innerHTML = "";
+      centerpiece.classList.add("result-mode");
+      resultImage.src = imageName;
+      resultImage.alt = `Result for ${state.score} correct answers`;
+      resultImage.style.display = "block";
+      resultFallback.classList.remove("visible");
+      resultCaption.textContent = `You finished at ${stage} with ${state.score} correct answers out of ${state.questions.length}.`;
+      resultCard.classList.add("visible");
+      renderPrizeList();
+    }
+
+    function getResultImageName(score) {
+      if (score <= 3) return "0_3.png";
+      if (score <= 6) return "4_6.png";
+      if (score <= 9) return "7_9.png";
+      if (score <= 11) return "10_11.png";
+      if (score <= 13) return "12_13.png";
+      if (score === 14) return "14.png";
+      return "15.png";
+    }
+
+    function useFifty() {
+      if (state.usedFifty || state.locked) return;
+
+      const correctAnswer = currentQuestion().answer;
+      const wrongAnswers = categories.filter((category) => category !== correctAnswer);
+      const removed = shuffle(wrongAnswers).slice(0, 1);
+      state.hiddenOptions = new Set(removed);
+      state.usedFifty = true;
+      fiftyBtn.disabled = true;
+      messageElement.textContent = "VAR Check removed one wrong answer.";
+      renderAnswers();
+    }
+
+    function useAudience() {
+      if (state.usedAudience || state.locked) return;
+
+      state.usedAudience = true;
+      audienceBtn.disabled = true;
+      audiencePanel.classList.add("visible");
+      renderAudience();
+      messageElement.textContent = "The fans have voted.";
+    }
+
+    function renderAudience() {
+      const correctAnswer = currentQuestion().answer;
+      const visibleCategories = categories.filter((category) => !state.hiddenOptions.has(category));
+      const correctPercent = visibleCategories.length === 2 ? randomBetween(68, 86) : randomBetween(52, 76);
+      let remaining = 100 - correctPercent;
+      const results = {};
+
+      visibleCategories.forEach((category) => {
+        results[category] = category === correctAnswer ? correctPercent : 0;
+      });
+
+      const wrongVisible = visibleCategories.filter((category) => category !== correctAnswer);
+      wrongVisible.forEach((category, index) => {
+        const value = index === wrongVisible.length - 1 ? remaining : randomBetween(8, Math.max(8, remaining - 8));
+        results[category] = value;
+        remaining -= value;
+      });
+
+      categories.forEach((category) => {
+        if (state.hiddenOptions.has(category)) results[category] = 0;
+      });
+
+      audienceBars.innerHTML = "";
+      categories.forEach((category) => {
+        const row = document.createElement("div");
+        row.className = "bar-row";
+
+        const name = document.createElement("div");
+        name.className = "bar-name";
+        name.textContent = category;
+
+        const track = document.createElement("div");
+        track.className = "bar-track";
+
+        const fill = document.createElement("div");
+        fill.className = "bar-fill";
+        fill.style.width = `${results[category]}%`;
+        track.appendChild(fill);
+
+        const percent = document.createElement("div");
+        percent.textContent = `${results[category]}%`;
+
+        row.append(name, track, percent);
+        audienceBars.appendChild(row);
+      });
+    }
+
+    function renderPrizeList() {
+      prizeList.innerHTML = "";
+      stages.slice().reverse().forEach((stage, reverseIndex) => {
+        const levelIndex = stages.length - 1 - reverseIndex;
+        const item = document.createElement("div");
+        item.className = "level";
+        const result = state.levelResults[levelIndex];
+        if (result === "correct") item.classList.add("done");
+        if (result === "wrong") item.classList.add("wrong-level");
+        if (levelIndex === state.currentIndex && !result) item.classList.add("active");
+
+        const number = document.createElement("span");
+        number.textContent = `${levelIndex + 1}.`;
+
+        const label = document.createElement("span");
+        label.textContent = stage;
+
+        item.append(number, label);
+        prizeList.appendChild(item);
+      });
+    }
+
+    function randomBetween(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    fiftyBtn.addEventListener("click", useFifty);
+    audienceBtn.addEventListener("click", useAudience);
+    restartBtn.addEventListener("click", startGame);
+    startBtn.addEventListener("click", startGame);
+
+    questionText.textContent = "Click KICK OFF to begin the tournament.";
+    renderAnswers();
+    renderPrizeList();
+  </script>
+</body>
+</html>
